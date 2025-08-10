@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora Gestacional - Dr. Wevelin</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+      color: #2c3e50;
+    }
+    header { text-align: center; margin-bottom: 30px; }
+    header img { max-width: 150px; }
+    h2 { color: #1c4c85; text-align: center; }
+    label { font-weight: bold; display: block; margin-top: 15px; }
+    input, select {
+      padding: 10px; width: 100%; margin-top: 5px;
+      border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px; padding: 12px; width: 100%;
+      background: #1c4c85; color: white; font-size: 16px;
+      border: none; border-radius: 6px; cursor: pointer;
+    }
+    button:hover { background: #2f6cad; }
+    .resultado, .box-corrigida {
+      margin-top: 25px; padding: 15px;
+      background: #fff; border-radius: 7px; border: 1px solid #ccc;
+    }
+    .box-corrigida { background: #f1f7fa; border: 1.5px solid #79a9d1;}
+    .titulo-corrigida { color: #256aa2; font-weight: bold; font-size: 18px; }
+    .destaque { font-weight: bold; color: #16662a; }
+    footer {
+      margin-top: 40px; font-size: 12px;
+      text-align: center; color: #555; border-top: 1px solid #ccc; padding-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="logo_wevelin.png" alt="Logo Dr. Wevelin Matos" />
+</header>
+
+<h2>Calculadora de Idade Gestacional e DPP</h2>
+
+<label for="modo">Escolha o modo de entrada:</label>
+<select id="modo" onchange="alternarModo()">
+  <option value="dum">Com DUM</option>
+  <option value="usg">Com USG 1º trimestre</option>
+</select>
+
+<div id="entradaDUM">
+  <label for="dum">Data da Última Menstruação (DUM):</label>
+  <input type="date" id="dum" />
+</div>
+
+<div id="entradaUSG" style="display: none;">
+  <label for="dataUSG">Data da ultrassonografia:</label>
+  <input type="date" id="dataUSG" />
+  <label for="semanas">Idade gestacional no USG:</label>
+  <input type="number" id="semanas" placeholder="Semanas" min="0" max="13"/>
+  <input type="number" id="dias" placeholder="Dias" min="0" max="6"/>
+</div>
+
+<button onclick="calcular()">Calcular</button>
+
+<div class="resultado" id="resultado"></div>
+
+<!-- NOVA SEÇÃO: Idade gestacional corrigida pós-natal -->
+<div class="box-corrigida">
+  <div class="titulo-corrigida">Idade Gestacional Corrigida Pós-Natal</div>
+  
+  <label for="dataNascimento">Data de nascimento:</label>
+  <input type="date" id="dataNascimento" />
+  
+  <label>IG ao nascimento:</label>
+  <div style="display:flex; gap:10px;">
+    <input type="number" id="igNascimentoSemanas" placeholder="Semanas" min="20" max="42" style="width:55%">
+    <input type="number" id="igNascimentoDias" placeholder="Dias" min="0" max="6" style="width:35%">
+  </div>
+  
+  <label for="dataHojeCorrigida">Data para cálculo:</label>
+  <input type="date" id="dataHojeCorrigida" value="">
+  
+  <button onclick="calcularCorrigidaPosNatal()">Calcular Corrigida Pós-Natal</button>
+  
+  <div id="resultadoCorrigida"></div>
+</div>
+
+<footer>
+  <p><strong>Dr. Wevelin Matos</strong> | Pediatria e Cardiologia Pediátrica</p>
+  <p>CRM/SP 196372 | (16) 99783-2383 | @dr.wevelinmatos</p>
+  <p>Ribeirão Preto - SP</p>
+</footer>
+
+<script>
+  // Inicializa campo dataHojeCorrigida com hoje
+  document.addEventListener("DOMContentLoaded", function() {
+    let hoje = new Date();
+    document.getElementById("dataHojeCorrigida").value =
+      hoje.toISOString().slice(0,10);
+  });
+
+  function alternarModo() {
+    const modo = document.getElementById("modo").value;
+    document.getElementById("entradaDUM").style.display = modo === "dum" ? "block" : "none";
+    document.getElementById("entradaUSG").style.display = modo === "usg" ? "block" : "none";
+    document.getElementById("resultado").innerHTML = '';
+  }
+
+  function calcular() {
+    const hoje = new Date();
+    let dpp, igData, igCorrigida;
+
+    if (document.getElementById("modo").value === "dum") {
+      const dum = new Date(document.getElementById("dum").value);
+      if (isNaN(dum)) {
+        alert("Insira uma data válida para a DUM.");
+        return;
+      }
+      dpp = new Date(dum);
+      dpp.setDate(dpp.getDate() + 280);
+      const diff = Math.floor((hoje - dum) / (1000 * 60 * 60 * 24));
+      const semanas = Math.floor(diff / 7);
+      const dias = diff % 7;
+      igData = `Idade Gestacional hoje: <span class='destaque'>${semanas} semanas e ${dias} dias</span>`;
+      igCorrigida = '';
+    } else {
+      const dataUSG = new Date(document.getElementById("dataUSG").value);
+      const semanasUSG = parseInt(document.getElementById("semanas").value);
+      const diasUSG = parseInt(document.getElementById("dias").value);
+      if (isNaN(dataUSG) || isNaN(semanasUSG) || isNaN(diasUSG)) {
+        alert("Preencha corretamente os campos do USG.");
+        return;
+      }
+      const idadeGestacionalDias = semanasUSG * 7 + diasUSG;
+      const dataEstimadaDUM = new Date(dataUSG);
+      dataEstimadaDUM.setDate(dataEstimadaDUM.getDate() - idadeGestacionalDias);
+      dpp = new Date(dataEstimadaDUM);
+      dpp.setDate(dpp.getDate() + 280);
+
+      // IG calculada hoje
+      const diff = Math.floor((hoje - dataEstimadaDUM) / (1000 * 60 * 60 * 24));
+      const igSemanas = Math.floor(diff / 7);
+      const igDias = diff % 7;
+      igData = `Idade Gestacional hoje: <span class='destaque'>${igSemanas} semanas e ${igDias} dias</span>`;
+      igCorrigida = `<br/>Idade Gestacional corrigida (USG): <span class='destaque'>${igSemanas} semanas e ${igDias} dias</span>`;
+    }
+    document.getElementById("resultado").innerHTML =
+      `<p>${igData}${igCorrigida ? igCorrigida : ''}</p>
+      <p><strong>Data Provável do Parto:</strong> ${dpp.toLocaleDateString('pt-BR')}</p>`;
+  }
+
+  // NOVA FUNÇÃO: Idade gestacional corrigida pós-natal
+  function calcularCorrigidaPosNatal() {
+    const dataNascimento = new Date(document.getElementById("dataNascimento").value);
+    const semanas = parseInt(document.getElementById("igNascimentoSemanas").value);
+    const dias = parseInt(document.getElementById("igNascimentoDias").value);
+    const dataHoje = new Date(document.getElementById("dataHojeCorrigida").value);
+
+    if (isNaN(dataNascimento) || isNaN(semanas) || isNaN(dias) || isNaN(dataHoje)) {
+      document.getElementById("resultadoCorrigida").innerHTML = "<span style='color:#a00'>Preencha todos os campos corretamente.</span>";
+      return;
+    }
+
+    // Idade pós-natal em dias
+    const diffDias = Math.floor((dataHoje - dataNascimento) / (1000 * 60 * 60 * 24));
+    if (diffDias < 0) {
+      document.getElementById("resultadoCorrigida").innerHTML = "<span style='color:#a00'>A data para cálculo deve ser após o nascimento.</span>";
+      return;
+    }
+
+    // Idade gestacional corrigida = IG ao nascimento + dias pós-natal
+    const totalDiasCorrigida = semanas * 7 + dias + diffDias;
+    const semanasCorrigida = Math.floor(totalDiasCorrigida / 7);
+    const diasCorrigida = totalDiasCorrigida % 7;
+
+    document.getElementById("resultadoCorrigida").innerHTML =
+      `<b>Idade gestacional corrigida:</b><br><span class='destaque'>${semanasCorrigida} semanas e ${diasCorrigida} dias</span>
+      <br><small>(Calculada para ${dataHoje.toLocaleDateString('pt-BR')})</small>`;
+  }
+</script>
+
+</body>
+</html>
